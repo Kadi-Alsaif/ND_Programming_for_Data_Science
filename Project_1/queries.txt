@@ -1,3 +1,6 @@
+the queries
+
+
 -- Query 1: Family Movie Rentals
 
 SELECT 
@@ -67,5 +70,7 @@ FROM top_customers tc
 JOIN payment p ON tc.customer_id = p.customer_id
 GROUP BY pay_mon, tc.fullname
 ORDER BY tc.fullname, pay_mon;
+
+
 
 
