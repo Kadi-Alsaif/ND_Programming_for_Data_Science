@@ -1,0 +1,71 @@
+-- Query 1: Family Movie Rentals
+
+SELECT 
+    f.title AS film_title,
+    c.name AS category_name,
+    COUNT(r.rental_id) AS rental_count
+FROM film f
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category c ON fc.category_id = c.category_id
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+WHERE c.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')
+GROUP BY f.title, c.name
+ORDER BY category_name, film_title;
+
+-- Query 2: Rental Duration Quartiles and Counts
+
+WITH quartile_analysis AS (
+    SELECT 
+        c.name,
+        NTILE(4) OVER (ORDER BY f.rental_duration) AS standard_quartile
+    FROM film f
+    JOIN film_category fc ON f.film_id = fc.film_id
+    JOIN category c ON fc.category_id = c.category_id
+    WHERE c.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')
+)
+SELECT 
+    name AS category,
+    standard_quartile AS rental_length_category,
+    COUNT(*) AS count
+FROM quartile_analysis
+GROUP BY name, standard_quartile
+ORDER BY name, standard_quartile;
+
+-- Query 3: Monthly Store Rentals
+
+SELECT 
+    DATE_PART('year', r.rental_date) AS year,
+    DATE_PART('month', r.rental_date) AS month,
+    i.store_id AS store_id,
+    COUNT(r.rental_id) AS count_rentals
+FROM rental r
+JOIN inventory i ON r.inventory_id = i.inventory_id
+GROUP BY year, month, i.store_id
+ORDER BY year, month, i.store_id;
+
+
+-- Query 4: Top 10 Customers Monthly Payments
+
+WITH top_customers AS (
+    SELECT 
+        c.customer_id,
+        CONCAT(c.first_name, ' ', c.last_name) AS fullname,
+        SUM(p.amount) AS total_payments
+    FROM customer c
+    JOIN payment p ON c.customer_id = p.customer_id
+    GROUP BY c.customer_id, fullname
+    ORDER BY total_payments DESC
+    LIMIT 10
+)
+SELECT 
+    DATE_TRUNC('month', p.payment_date) AS pay_mon,
+    tc.fullname,
+    COUNT(p.payment_id) AS pay_countpermon,
+    SUM(p.amount) AS pay_amount
+FROM top_customers tc
+JOIN payment p ON tc.customer_id = p.customer_id
+GROUP BY pay_mon, tc.fullname
+ORDER BY tc.fullname, pay_mon;
+
+
